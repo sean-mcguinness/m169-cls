@@ -1,0 +1,39 @@
+version: "3.7"
+
+services:
+  webpage:
+    image: webseite_test:v1
+    ports:
+      - "80:8080"
+    networks:
+      - m169-net
+  
+  snake:
+    image: ghcr.io/sean-mcguinness/m169-nginx-snake:v1
+    ports:
+      - "8081:8080"
+    networks:
+      - m169-net
+
+  pong:
+    image: ghcr.io/sean-mcguinness/m169-nginx-pong:v1
+    ports:
+      - "8082:8080"
+    networks:
+      - m169-net
+
+  tictactoe:
+    image: ghcr.io/sean-mcguinness/m169-nginx-tictactoe:v1
+    ports:
+      - "8083:8080"
+    networks:
+      - m169-net
+
+  #grafana:
+  # image: #TODO
+  #  ports:
+  #    - "3000:3000"
+  #  networks:
+  #    - m169-net
+networks:
+  m169-net:
