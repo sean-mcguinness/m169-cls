@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webseite mit Games</title>
+<style>
+    .button {
+        display:grid;
+        gap: 10%;
+        justify-content: center;
+        font-family: Arial;
+        color: white;
+}
+    body {
+        background-color: black;
+}
+</style>
+</head>
+<body>
+    <div class="button">
+    <h1 style="text-align:center;">Willkommen auf unserer Game-Webseite</h1>
+    <p>Bitte wählen Sie ein Spiel:</p>
+    <button onclick="window.location.href='http://pong:8080';">Play Pong</button>
+    <button onclick="window.location.href='http://snake:8080';">Play Snake</button>
+    <button onclick="window.location.href='http://tictactoe:8080';">Play Tic Tac Toe</button>
+    </div>
+</body>
+</html>
