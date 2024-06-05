@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   webpage:
-    image: webseite_test:v1
+    image: ghcr.io/sean-mcguinness/m169-nginx-website:v1
     ports:
       - "80:8080"
     networks:
