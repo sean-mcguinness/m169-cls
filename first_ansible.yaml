@@ -1,0 +1,139 @@
+---
+- name: Create VPC and ECS Cluster
+  hosts: localhost
+  gather_facts: no
+  vars:
+    region: us-west-2
+    vpc_cidr: "192.168.80.0/28"
+    subnet_cidr: "192.168.80.0/28"
+    vpc_name: "MyVPC"
+    subnet_name: "MySubnet"
+    ecs_cluster_name: "MyECSCluster"
+    nginx_task_definition_name: "nginx-task"
+    container_name: "nginx-container"
+  tasks:
+    - name: Create VPC
+      community.aws.vpc_vpc:
+        cidr_block: "{{ vpc_cidr }}"
+        region: "{{ region }}"
+        state: present
+        tags:
+          Name: "{{ vpc_name }}"
+      register: vpc
+
+    - name: Create subnet
+      community.aws.vpc_subnet:
+        vpc_id: "{{ vpc.vpc.id }}"
+        cidr: "{{ subnet_cidr }}"
+        region: "{{ region }}"
+        state: present
+        map_public: yes
+        tags:
+          Name: "{{ subnet_name }}"
+      register: subnet
+
+    - name: Create internet gateway
+      community.aws.vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ region }}"
+        state: present
+        tags:
+          Name: "MyInternetGateway"
+      register: igw
+
+    - name: Attach internet gateway to VPC
+      community.aws.ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        internet_gateway_id: "{{ igw.gateway_id }}"
+        region: "{{ region }}"
+        state: present
+
+    - name: Create route table
+      community.aws.vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ region }}"
+        state: present
+        tags:
+          Name: "MyRouteTable"
+      register: route_table
+
+    - name: Create route to internet gateway
+      community.aws.vpc_route:
+        route_table_id: "{{ route_table.route_table.id }}"
+        destination_cidr_block: "0.0.0.0/0"
+        gateway_id: "{{ igw.gateway_id }}"
+        region: "{{ region }}"
+        state: present
+
+    - name: Associate route table with subnet
+      community.aws.vpc_subnet_route_table:
+        subnet_id: "{{ subnet.subnet.id }}"
+        route_table_id: "{{ route_table.route_table.id }}"
+        region: "{{ region }}"
+        state: present
+
+    - name: Create security group
+      community.aws.ec2_security_group:
+        name: MySecurityGroup
+        description: Allow HTTP and SSH
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            ports:
+              - 80
+            cidr_ip: 0.0.0.0/0
+        state: present
+      register: security_group
+
+    - name: Create ECS cluster
+      community.aws.ecs_cluster:
+        name: "{{ ecs_cluster_name }}"
+        state: present
+      register: ecs_cluster
+
+    - name: Register ECS task definition
+      community.aws.ecs_taskdefinition:
+        family: "{{ nginx_task_definition_name }}"
+        network_mode: awsvpc
+        container_definitions: >
+          [
+            {
+              "name": "{{ container_name }}",
+              "image": "nginx",
+              "essential": true,
+              "memory": 256,
+              "cpu": 256,
+              "portMappings": [
+                {
+                  "containerPort": 80,
+                  "hostPort": 80
+                }
+              ]
+            }
+          ]
+        requires_compatibilities: 
+          - FARGATE
+        cpu: "256"
+        memory: "512"
+        state: present
+      register: task_definition
+
+    - name: Run ECS task
+      community.aws.ecs_task:
+        cluster: "{{ ecs_cluster_name }}"
+        task_definition: "{{ task_definition.taskdefinition.task_definition_arn }}"
+        count: 1
+        network_configuration:
+          awsvpcConfiguration:
+            subnets: 
+              - "{{ subnet.subnet.id }}"
+            security_groups:
+              - "{{ security_group.group_id }}"
+            assign_public_ip: ENABLED
+        launch_type: FARGATE
+      register: ecs_task
+
+    - name: Output ECS task details
+      debug:
+        msg: "{{ ecs_task }}"
