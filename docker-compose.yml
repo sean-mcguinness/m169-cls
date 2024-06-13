@@ -71,14 +71,13 @@ services:
     ports:
       - "8079:8080" 
     volumes:
-      - "/:/rootfs"
-      - "/var/run:/var/run"
-      - "/sys:/sys"
-      - "/var/lib/docker/:/var/lib/docker"
-      - "/dev/disk/:/dev/disk"
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
     devices:
-      - "/dev/kmsg"
-
+      - /dev/kmsg
   nodeexporter:
     image: prom/node-exporter:latest
     container_name: nodeexporter
