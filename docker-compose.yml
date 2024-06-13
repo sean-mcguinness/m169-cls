@@ -3,12 +3,14 @@ version: "3.7"
 services:
   webpage:
     image: ghcr.io/sean-mcguinness/m169-nginx-website:v3
+    container_name: webpage
     ports:
       - "80:8080" #Isnt being used, since the network is in host mode. Website reachable via host ip and port 80
     network_mode: "host" 
   
   snake:
     image: ghcr.io/sean-mcguinness/m169-nginx-snake:v1
+    container_name: snake
     ports:
       - "8081:8080"
     networks:
@@ -17,6 +19,7 @@ services:
 
   pong:
     image: ghcr.io/sean-mcguinness/m169-nginx-pong:v1
+    container_name: pong
     ports:
       - "8082:8080"
     networks:
@@ -24,16 +27,90 @@ services:
 
   tictactoe:
     image: ghcr.io/sean-mcguinness/m169-nginx-tictactoe:v1
+    container_name: tictactoe
     ports:
       - "8083:8080"
     networks:
       - m169-net
 
-  #grafana:
-  # image: #TODO
-  #  ports:
-  #    - "3000:3000"
-  #  networks:
-  #    - m169-net
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    depends_on:
+    - cadvisor
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - m169-net
+    links:
+      - nodeexporter:nodeexporter
+ 
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana:/etc/grafana/provisioning/dashboards/
+    networks:
+      - m169-net
+    links:
+      - prometheus:prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    container_name: cadvisor
+    depends_on:
+    - redis
+    networks:
+      - m169-net
+    privileged: true
+    ports:
+      - "8079:8080" 
+    volumes:
+      - "/:/rootfs"
+      - "/var/run:/var/run"
+      - "/sys:/sys"
+      - "/var/lib/docker/:/var/lib/docker"
+      - "/dev/disk/:/dev/disk"
+    devices:
+      - "/dev/kmsg"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+    - 6379:6379
+
+  nodeexporter:
+    image: prom/node-exporter:latest
+    container_name: nodeexporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - m169-net
+
+volumes:
+  prom_data:
+
 networks:
   m169-net:
+    driver: bridge
