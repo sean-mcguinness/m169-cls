@@ -56,7 +56,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=grafana
     volumes:
       - ./monitoring/grafana:/etc/grafana/provisioning/datasources
-      - ./monitoring/grafana:/etc/grafana/provisioning/dashboards/
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards/
     networks:
       - m169-net
     links:
