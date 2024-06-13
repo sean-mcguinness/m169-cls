@@ -2,8 +2,6 @@ services:
   webpage:
     image: ghcr.io/sean-mcguinness/m169-nginx-website:v3
     container_name: webpage
-    ports:
-      - "80:8080" #Isnt being used, since the network is in host mode. Website reachable via host ip and port 80
     network_mode: "host" 
   
   snake:
