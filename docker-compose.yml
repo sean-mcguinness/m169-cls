@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   webpage:
     image: ghcr.io/sean-mcguinness/m169-nginx-website:v3
