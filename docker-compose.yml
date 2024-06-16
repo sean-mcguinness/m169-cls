@@ -2,7 +2,9 @@ services:
   webpage:
     image: ghcr.io/sean-mcguinness/m169-nginx-website:v3
     container_name: webpage
-    network_mode: "host" 
+    network_mode: "host"
+    ports:
+      - "80:80"
   
   snake:
     image: ghcr.io/sean-mcguinness/m169-nginx-snake:v1
