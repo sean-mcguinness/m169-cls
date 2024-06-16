@@ -12,7 +12,6 @@ services:
     networks:
       - m169-net
 
-
   pong:
     image: ghcr.io/sean-mcguinness/m169-nginx-pong:v1
     container_name: pong
@@ -78,6 +77,7 @@ services:
       - /dev/disk/:/dev/disk:ro
     devices:
       - /dev/kmsg
+      
   nodeexporter:
     image: prom/node-exporter:latest
     container_name: nodeexporter
